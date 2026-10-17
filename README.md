@@ -1,8 +1,8 @@
 <div align="center">
-  <img src="/public/images/logo.png" alt="ConejoMalo" width="80" />
+  <img src="./public/logo-punto-hogar.png" alt="Punto Hogar" width="160" />
   
-  # ConejoMalo
-  **E-commerce minimalista para productos de conejos**
+  # Punto Hogar
+  **E-commerce para productos y soluciones del hogar**
 
   Stack: Next.js (App Router) · TypeScript · Tailwind CSS · Prisma · PostgreSQL · JWT Auth
 </div>
@@ -27,7 +27,8 @@
 - Búsqueda instantánea (debounce) con precios.
 - Autenticación simple via JWT (login, registro, logout, estado de sesión).
 - UI responsive con navbar adaptable y dropdown.
-- Paneles API para administración (productos, categorías, usuarios) listo para endurecer.
+- Panel administrativo para productos, categorías, usuarios, proveedores, compras e inventario.
+- Recepción de compras transaccional e idempotente con historial de costos.
 
 ## Arquitectura Resumida
 Ver documento detallado en `docs/arquitectura.md`.
@@ -74,9 +75,11 @@ Resumen (ver `prisma/schema.prisma`):
 |---------|--------------|-----------|
 | User | id, email, role | orders, products |
 | Category | id, name, slug | products |
-| Product | id, name, slug, price, imageUrl | category, orderItems |
+| Product | id, name, slug, price, imageUrl, stock | category, suppliers, orderItems |
 | Order | id, customer, total | items, user? |
 | OrderItem | id, quantity, unitPrice | order, product |
+| Supplier | id, businessName, active | products, purchases |
+| Purchase | id, supplierId, status, total | items, inventory movements |
 
 ## API
 Referencia completa en `docs/api.md`. Ejemplo rápido:
@@ -116,3 +119,4 @@ Documentos adicionales:
 - `docs/auth-cart.md`
 - `docs/despliegue.md`
 - `docs/manual-tecnico.md`
+- `docs/rbac.md`

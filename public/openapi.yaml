@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: ConejoMalo API
+  title: Punto Hogar API
   version: '1.0.0'
   description: |
     API pública y de administración para la tienda. Autenticación vía cookie `session`.
