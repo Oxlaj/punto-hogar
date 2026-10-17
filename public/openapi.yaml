@@ -1,0 +1,1405 @@
+openapi: 3.0.3
+info:
+  title: ConejoMalo API
+  version: '1.0.0'
+  description: |
+    API pública y de administración para la tienda. Autenticación vía cookie `session`.
+    Este documento es la fuente de verdad de los payloads.
+servers:
+  - url: https://{host}/api
+    variables:
+      host:
+        default: localhost:3000
+  - url: http://localhost:3000/api
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        error: { type: string }
+        code: { type: string, nullable: true }
+        fields:
+          type: object
+          additionalProperties: { type: string }
+          nullable: true
+    Permission:
+      type: object
+      properties:
+        key: { type: string }
+        description: { type: string, nullable: true }
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time, nullable: true }
+        updatedAt: { type: string, format: date-time, nullable: true }
+    Role:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        label: { type: string }
+        description: { type: string, nullable: true }
+        permissions:
+          type: array
+          items: { type: string }
+        users: { type: integer, description: 'Número de usuarios con este rol' }
+    RoleDetail:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        label: { type: string }
+        description: { type: string, nullable: true }
+        permissions:
+          type: array
+          items: { type: string }
+        users:
+          type: array
+          items: { type: string }
+    UserListItem:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string, nullable: true }
+        roles:
+          type: array
+          items: { type: string }
+        createdAt: { type: string, format: date-time }
+    OrderListItem:
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED] }
+        customerName: { type: string }
+        customerEmail: { type: string }
+        itemsCount: { type: integer }
+        subtotal: { oneOf: [ { type: string }, { type: number } ] }
+        total: { oneOf: [ { type: string }, { type: number } ] }
+        createdAt: { type: string, format: date-time }
+    OrderDetail:
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED] }
+        customerName: { type: string }
+        customerEmail: { type: string }
+        customerPhone: { type: string, nullable: true }
+        customerAddress: { type: string, nullable: true }
+        subtotal: { oneOf: [ { type: string }, { type: number } ] }
+        total: { oneOf: [ { type: string }, { type: number } ] }
+        createdAt: { type: string, format: date-time }
+        userEmail: { type: string, nullable: true }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productName: { type: string }
+              productSlug: { type: string }
+              productId: { type: string }
+              qty: { type: integer }
+              unitPrice: { oneOf: [ { type: string }, { type: number } ] }
+              total: { oneOf: [ { type: string }, { type: number } ] }
+    UserOrderListItem:
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED] }
+        itemsCount: { type: integer }
+        subtotal: { oneOf: [ { type: string }, { type: number } ] }
+        total: { oneOf: [ { type: string }, { type: number } ] }
+        createdAt: { type: string, format: date-time }
+    UserOrderDetail:
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED] }
+        createdAt: { type: string, format: date-time }
+        customerName: { type: string }
+        customerEmail: { type: string }
+        customerPhone: { type: string, nullable: true }
+        customerAddress: { type: string, nullable: true }
+        subtotal: { oneOf: [ { type: string }, { type: number } ] }
+        total: { oneOf: [ { type: string }, { type: number } ] }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: string }
+              name: { type: string }
+              slug: { type: string }
+              qty: { type: integer }
+              unitPrice: { oneOf: [ { type: string }, { type: number } ] }
+              total: { oneOf: [ { type: string }, { type: number } ] }
+    Category:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        active: { type: boolean }
+        imageUrl: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    Product:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string, nullable: true }
+        price: { oneOf: [ { type: string }, { type: number } ] }
+        imageUrl: { type: string, nullable: true }
+        categoryId: { type: string }
+        active: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        category:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            name: { type: string }
+            slug: { type: string }
+    ProductAdminLookup:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        price: { oneOf: [ { type: string }, { type: number } ] }
+        category:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            name: { type: string }
+    CategoryAdminLookup:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+    UserAdminLookup:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string, nullable: true }
+    OrderItem:
+      type: object
+      properties:
+        id: { type: string }
+        productId: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        unitPrice: { type: string }
+        quantity: { type: integer }
+    Order:
+      type: object
+      properties:
+        id: { type: string }
+        customer: { type: string }
+        email: { type: string }
+        address: { type: string }
+        phone: { type: string }
+        subtotal: { type: string }
+        total: { type: string }
+        status:
+          type: string
+          enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED]
+        createdAt: { type: string, format: date-time }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+    OrderWithUser:
+      allOf:
+        - $ref: '#/components/schemas/Order'
+        - type: object
+          properties:
+            user:
+              type: object
+              nullable: true
+              properties:
+                id: { type: string }
+                email: { type: string }
+    Session:
+      type: object
+      properties:
+        authenticated: { type: boolean }
+        sub: { type: string }
+        email: { type: string }
+        name: { type: string, nullable: true }
+        role: { type: string }
+        permissions:
+          type: array
+          items: { type: string }
+    AuditLogItem:
+      type: object
+      properties:
+        id: { type: string }
+        createdAt: { type: string, format: date-time }
+        userEmail: { type: string, nullable: true }
+        action: { type: string }
+        entity: { type: string, nullable: true }
+        entityId: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+    MetricsSummary:
+      type: object
+      properties:
+        range:
+          type: object
+          properties:
+            from: { type: string }
+            to: { type: string }
+            granularity: { type: string, enum: [day, week, month] }
+        totals:
+          type: object
+          properties:
+            revenue: { type: number }
+            orders: { type: integer }
+            aov: { type: number }
+            units: { type: integer }
+        users:
+          type: object
+          properties:
+            newUsers: { type: integer }
+            buyers: { type: integer }
+            repeat: { type: integer }
+        orders:
+          type: object
+          properties:
+            canceled: { type: integer }
+            canceledPct: { type: number }
+        generatedAt: { type: string }
+    MetricsTimeSeriesPoint:
+      type: object
+      properties:
+        date: { type: string }
+        revenue: { type: number }
+        orders: { type: integer }
+        units: { type: integer }
+    MetricsUserSeriesPoint:
+      type: object
+      properties:
+        date: { type: string }
+        newUsers: { type: integer }
+    MetricsTopProduct:
+      type: object
+      properties:
+        productId: { type: string }
+        name: { type: string }
+        revenue: { type: number }
+        units: { type: integer }
+    MetricsCategoryItem:
+      type: object
+      properties:
+        categoryId: { type: string }
+        name: { type: string }
+        revenue: { type: number }
+        units: { type: integer }
+    MetricsOrderStatusPoint:
+      type: object
+      properties:
+        date: { type: string }
+        PENDING: { type: integer }
+        PAID: { type: integer }
+        SHIPPED: { type: integer }
+        COMPLETED: { type: integer }
+        CANCELED: { type: integer }
+    MetricsOrderStatusTotals:
+      type: object
+      properties:
+        PENDING: { type: integer }
+        PAID: { type: integer }
+        SHIPPED: { type: integer }
+        COMPLETED: { type: integer }
+        CANCELED: { type: integer }
+        total: { type: integer }
+    MetricsRecentOrder:
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED] }
+        total: { type: number }
+        createdAt: { type: string }
+        userEmail: { type: string, nullable: true }
+        items: { type: integer }
+    MetricsDashboard:
+      type: object
+      properties:
+        range:
+          type: object
+          properties:
+            from: { type: string }
+            to: { type: string }
+            granularity: { type: string, enum: [day, week, month] }
+        summary: { $ref: '#/components/schemas/MetricsSummary' }
+        timeseries:
+          type: array
+          items: { $ref: '#/components/schemas/MetricsTimeSeriesPoint' }
+        users:
+          type: array
+          items: { $ref: '#/components/schemas/MetricsUserSeriesPoint' }
+        topProducts:
+          type: array
+          items: { $ref: '#/components/schemas/MetricsTopProduct' }
+        categories:
+          type: array
+          items: { $ref: '#/components/schemas/MetricsCategoryItem' }
+        ordersStatus:
+          type: object
+          properties:
+            breakdown:
+              type: array
+              items: { $ref: '#/components/schemas/MetricsOrderStatusPoint' }
+            totals: { $ref: '#/components/schemas/MetricsOrderStatusTotals' }
+        recentOrders:
+          type: array
+          items: { $ref: '#/components/schemas/MetricsRecentOrder' }
+paths:
+  /orders/mine:
+    get:
+      summary: Listar pedidos del usuario autenticado
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: per
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED] }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/UserOrderListItem' }
+                  page: { type: integer }
+                  per: { type: integer }
+                  total: { type: integer }
+                  totalPages: { type: integer }
+        '401': { description: No autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+        '500': { description: Error, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+  /orders/mine/{id}:
+    get:
+      summary: Obtener detalle de un pedido del usuario autenticado
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { $ref: '#/components/schemas/UserOrderDetail' } } } }
+        '401': { description: No autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+        '404': { description: No encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+        '500': { description: Error, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+  /products:
+    get:
+      summary: Listar productos públicos
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: per
+          schema: { type: integer, minimum: 1, maximum: 60 }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [new, price_asc, price_desc, name] }
+        - in: query
+          name: q
+          schema: { type: string, minLength: 2 }
+        - in: query
+          name: cat
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lista o paginación
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { $ref: '#/components/schemas/Product' }
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Product' }
+                      page: { type: integer }
+                      per: { type: integer }
+                      total: { type: integer }
+                      totalPages: { type: integer }
+        '500': { description: Error, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+  /products/{slugOrId}:
+    get:
+      summary: Obtener producto por slug o id (público)
+      parameters:
+        - in: path
+          name: slugOrId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { $ref: '#/components/schemas/Product' } } } }
+        '404': { description: No encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+  /categories:
+    get:
+      summary: Listar categorías públicas
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items: { $ref: '#/components/schemas/Category' }
+  /search:
+    get:
+      summary: Buscar productos
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string, minLength: 2 }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: per
+          schema: { type: integer, minimum: 1, maximum: 60 }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [new, price_asc, price_desc, name] }
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Product' }
+                  page: { type: integer }
+                  per: { type: integer }
+                  total: { type: integer }
+                  totalPages: { type: integer }
+  /cart:
+    get:
+      summary: Obtener carrito
+      responses:
+        '200': { description: Ok }
+    post:
+      summary: Agregar o incrementar producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId: { type: string }
+                qty: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Ok }
+        '400': { description: Inválido, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+        '404': { description: No existe producto, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+    put:
+      summary: Actualizar cantidad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId: { type: string }
+                qty: { type: integer, minimum: 0 }
+      responses:
+        '200': { description: Ok }
+    delete:
+      summary: Eliminar ítem del carrito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId: { type: string }
+      responses:
+        '200': { description: Ok }
+  /orders:
+    post:
+      summary: Crear orden
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                address: { type: string }
+      responses:
+        '201': { description: Creada, content: { application/json: { schema: { $ref: '#/components/schemas/Order' } } } }
+        '400': { description: Error de validación, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+
+  # Admin: Products
+  /admin/products:
+    get:
+      summary: Listar productos (admin)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: per
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - in: query
+          name: sort
+          schema: { type: string, enum: [new, price_asc, price_desc, name] }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: cat
+          schema: { type: string, description: 'ID o slug de la categoría' }
+        - in: query
+          name: active
+          schema: { type: string, enum: ["true","false","all"], default: 'all' }
+      responses:
+        '200':
+          description: Lista o paginación (si hay parámetros)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { $ref: '#/components/schemas/Product' }
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Product' }
+                      page: { type: integer }
+                      per: { type: integer }
+                      total: { type: integer }
+                      totalPages: { type: integer }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    post:
+      summary: Crear producto (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, price, categoryId]
+              properties:
+                name: { type: string }
+                price: { oneOf: [ { type: number }, { type: string } ] }
+                description: { type: string, nullable: true }
+                categoryId: { type: string }
+                active: { type: boolean }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, price, categoryId]
+              properties:
+                name: { type: string }
+                price: { type: string }
+                description: { type: string }
+                categoryId: { type: string }
+                active: { type: string, enum: ["true","false"] }
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '201': { description: Creado, content: { application/json: { schema: { $ref: '#/components/schemas/Product' } } } }
+        '400': { description: Error de validación, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/products/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    get:
+      summary: Obtener producto (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { $ref: '#/components/schemas/Product' } } } }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    put:
+      summary: Actualizar producto (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, price, categoryId]
+              properties:
+                name: { type: string }
+                price: { oneOf: [ { type: number }, { type: string } ] }
+                description: { type: string, nullable: true }
+                categoryId: { type: string }
+                active: { type: boolean }
+                imageUrl: { type: string, nullable: true, description: 'undefined para mantener; null para borrar' }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, price, categoryId]
+              properties:
+                name: { type: string }
+                price: { type: string }
+                description: { type: string }
+                categoryId: { type: string }
+                active: { type: string, enum: ["true","false"] }
+                image:
+                  type: string
+                  format: binary
+                removeImage: { type: string, enum: ["true","false"], description: 'true para borrar imagen actual' }
+      responses:
+        '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/Product' } } } }
+        '400': { description: Error de validación }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    delete:
+      summary: Eliminar producto (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/products/search:
+    get:
+      summary: Búsqueda rápida de productos (admin)
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: cat
+          schema: { type: string, description: 'ID o slug de la categoría' }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ProductAdminLookup' } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+
+  # Admin: Categories
+  /admin/categories:
+    get:
+      summary: Listar categorías (admin)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: per
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200':
+          description: Ok (lista o paginado)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { $ref: '#/components/schemas/Category' }
+                  - type: object
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/Category' } }
+                      page: { type: integer }
+                      per: { type: integer }
+                      total: { type: integer }
+                      totalPages: { type: integer }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    post:
+      summary: Crear categoría (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                active: { type: boolean }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                active: { type: string, enum: ["true","false"] }
+                image: { type: string, format: binary }
+      responses:
+        '201': { description: Creada, content: { application/json: { schema: { $ref: '#/components/schemas/Category' } } } }
+        '400': { description: Error de validación }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/categories/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    get:
+      summary: Obtener categoría (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { $ref: '#/components/schemas/Category' } } } }
+        '404': { description: No encontrada }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    put:
+      summary: Actualizar categoría (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                active: { type: boolean }
+                removeImage: { type: boolean }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                active: { type: string, enum: ["true","false"] }
+                image: { type: string, format: binary }
+                removeImage: { type: string, enum: ["true","false"] }
+      responses:
+        '200': { description: Actualizada, content: { application/json: { schema: { $ref: '#/components/schemas/Category' } } } }
+        '400': { description: Error de validación }
+        '404': { description: No encontrada }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    delete:
+      summary: Eliminar categoría (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+        '404': { description: No encontrada }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/categories/search:
+    get:
+      summary: Búsqueda rápida de categorías (admin)
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CategoryAdminLookup' } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+
+  # Admin: Users
+  /admin/users:
+    get:
+      summary: Listar usuarios (admin)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: per
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/UserListItem' } }, page: { type: integer }, per: { type: integer }, total: { type: integer }, totalPages: { type: integer } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    post:
+      summary: Crear usuario (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+                name: { type: string, nullable: true }
+                roles:
+                  type: array
+                  items: { type: string }
+                password: { type: string }
+      responses:
+        '201': { description: Creado, content: { application/json: { schema: { $ref: '#/components/schemas/UserListItem' } } } }
+        '400': { description: Error de validación }
+        '409': { description: Ya existe }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/users/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    get:
+      summary: Obtener usuario (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { $ref: '#/components/schemas/UserListItem' } } } }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    put:
+      summary: Actualizar usuario (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                name: { type: string, nullable: true }
+                roles: { type: array, items: { type: string } }
+                password: { type: string }
+      responses:
+        '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/UserListItem' } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    delete:
+      summary: Eliminar usuario (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/users/search:
+    get:
+      summary: Búsqueda rápida de usuarios (admin)
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/UserAdminLookup' } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+
+  # Admin: Roles y permisos
+  /admin/roles:
+    get:
+      summary: Listar roles (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: array, items: { allOf: [ { $ref: '#/components/schemas/Role' }, { type: object, properties: { usersCount: { type: integer } } } ] } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    post:
+      summary: Crear rol (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                label: { type: string }
+                description: { type: string, nullable: true }
+                permissions: { type: array, items: { type: string } }
+      responses:
+        '201': { description: Creado, content: { application/json: { schema: { $ref: '#/components/schemas/Role' } } } }
+        '400': { description: Error de validación }
+        '409': { description: Ya existe }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/roles/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    get:
+      summary: Obtener rol (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { $ref: '#/components/schemas/RoleDetail' } } } }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    put:
+      summary: Actualizar rol (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label: { type: string }
+                description: { type: string, nullable: true }
+                permissions: { type: array, items: { type: string } }
+      responses:
+        '200': { description: Actualizado, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    delete:
+      summary: Eliminar rol (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/roles/{id}/assign:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    post:
+      summary: Asignar rol a usuario (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId: { type: string }
+                email: { type: string, format: email }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+  /admin/roles/{id}/users:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    get:
+      summary: Listar usuarios de un rol (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/UserListItem' } } } } } } }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/roles/{id}/users/{userId}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+      - in: path
+        name: userId
+        required: true
+        schema: { type: string }
+    delete:
+      summary: Revocar rol a usuario (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    delete:
+      summary: Revocar rol a usuario (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+        '404': { description: No encontrado }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/permissions:
+    get:
+      summary: Listar permisos (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Permission' } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/permissions/invalidate:
+    post:
+      summary: Invalidar caché de permisos (admin)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId: { type: string, description: 'Si se omite, invalida para todos' }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean }, scope: { type: string, enum: ['single','all'] } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+
+  # Admin: Orders
+  /admin/orders:
+    get:
+      summary: Listar órdenes (admin)
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: per
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/OrderListItem' } }
+                  page: { type: integer }
+                  per: { type: integer }
+                  total: { type: integer }
+                  totalPages: { type: integer }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/orders/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    get:
+      summary: Obtener orden (admin)
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { $ref: '#/components/schemas/OrderDetail' } } } }
+        '404': { description: No encontrada }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    patch:
+      summary: Actualizar estado de orden (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED] }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean }, from: { type: string }, to: { type: string } } } } } }
+        '400': { description: Estado inválido }
+        '404': { description: No encontrada }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+    put:
+      summary: Actualizar estado de orden (alias) (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [PENDING, PAID, SHIPPED, COMPLETED, CANCELED] }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean }, from: { type: string }, to: { type: string } } } } } }
+        '400': { description: Estado inválido }
+        '404': { description: No encontrada }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+
+  # Admin: Audit
+  /admin/audit:
+    get:
+      summary: Listar auditoría (admin)
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: q
+          schema: { type: string }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/AuditLogItem' } }, nextCursor: { type: string, nullable: true } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+
+  # Admin: Dashboard metrics
+  /admin/metrics/summary:
+    get:
+      summary: Resumen de métricas (admin)
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date, description: 'YYYY-MM-DD' }
+        - in: query
+          name: to
+          schema: { type: string, format: date, description: 'YYYY-MM-DD' }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m], description: 'Granularidad corta (d/w/m) mapeada a day/week/month' }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { $ref: '#/components/schemas/MetricsSummary' } } } }
+  /admin/uploads/image:
+    post:
+      summary: Subir imagen genérica (admin)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+                kind: { type: string, enum: [product, category, generic] }
+                name: { type: string }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { url: { type: string } } } } } }
+        '400': { description: Error de validación }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/metrics/timeseries:
+    get:
+      summary: Serie temporal de métricas (admin)
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m] }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { range: { type: object, properties: { from: { type: string }, to: { type: string }, granularity: { type: string } } }, series: { type: array, items: { $ref: '#/components/schemas/MetricsTimeSeriesPoint' } } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/metrics/top-products:
+    get:
+      summary: Top productos (admin)
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m] }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { range: { type: object, properties: { from: { type: string }, to: { type: string } } }, products: { type: array, items: { $ref: '#/components/schemas/MetricsTopProduct' } } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/metrics/categories:
+    get:
+      summary: Distribución por categorías (admin)
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m] }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { range: { type: object, properties: { from: { type: string }, to: { type: string } } }, categories: { type: array, items: { $ref: '#/components/schemas/MetricsCategoryItem' } } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/metrics/orders-status:
+    get:
+      summary: Desglose por estado de órdenes (admin)
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m] }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { range: { type: object, properties: { from: { type: string }, to: { type: string }, granularity: { type: string } } }, breakdown: { type: array, items: { $ref: '#/components/schemas/MetricsOrderStatusPoint' } } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/metrics/export/{kind}:
+    parameters:
+      - in: path
+        name: kind
+        required: true
+        schema: { type: string, enum: [summary, timeseries, top-products, categories, orders-status] }
+    get:
+      summary: Exportar métricas (admin)
+      parameters:
+        - in: query
+          name: format
+          schema: { type: string, enum: [csv, json], default: csv }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m] }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        '200': { description: Ok }
+        '400': { description: Parámetros inválidos }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/metrics/users:
+    get:
+      summary: Serie de nuevos usuarios (admin)
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m] }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { range: { type: object, properties: { from: { type: string }, to: { type: string }, granularity: { type: string } } }, series: { type: array, items: { $ref: '#/components/schemas/MetricsUserSeriesPoint' } } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/metrics/recent-orders:
+    get:
+      summary: Pedidos recientes del rango (admin)
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m] }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { range: { type: object, properties: { from: { type: string }, to: { type: string } } }, items: { type: array, items: { $ref: '#/components/schemas/MetricsRecentOrder' } } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/metrics/orders-status-totals:
+    get:
+      summary: Totales de estados de pedidos (admin)
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m] }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { type: object, properties: { range: { type: object, properties: { from: { type: string }, to: { type: string } } }, totals: { $ref: '#/components/schemas/MetricsOrderStatusTotals' } } } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+  /admin/metrics/dashboard:
+    get:
+      summary: Paquete completo del tablero (admin)
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: g
+          schema: { type: string, enum: [d, w, m] }
+        - in: query
+          name: topLimit
+          schema: { type: integer, minimum: 1, maximum: 50 }
+        - in: query
+          name: recentLimit
+          schema: { type: integer, minimum: 1, maximum: 50 }
+      responses:
+        '200': { description: Ok, content: { application/json: { schema: { $ref: '#/components/schemas/MetricsDashboard' } } } }
+        '401': { description: No autenticado }
+        '403': { description: Prohibido }
+security:
+  - cookieAuth: []

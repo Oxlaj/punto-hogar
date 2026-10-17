@@ -1,0 +1,61 @@
+@import "boxicons/css/boxicons.min.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dense mode adjustments */
+html.dense-mode .chart-card { padding: 0.75rem; }
+html.dense-mode .chart-card h3 { font-size: 11px; }
+html.dense-mode .chart-body { height: 11rem; }
+html.dense-mode .chart-card .recharts-default-legend { display: none; }
+html.dense-mode .chart-card .recharts-cartesian-grid-horizontal line:nth-child(odd) { stroke-opacity: .15; }
+html.dense-mode .chart-card .recharts-cartesian-axis-tick text { font-size: 10px; }
+html.dense-mode .chart-card button { font-size:10px; padding: 0.125rem 0.375rem; }
+html.dense-mode .chart-card .recharts-wrapper { font-size: 10px; }
+html.dense-mode .chart-card .recharts-tooltip-wrapper { font-size: 10px; }
+html.dense-mode .chart-card .recharts-legend-wrapper { display:none; }
+html.dense-mode .chart-card .recharts-surface { overflow: visible; }
+
+/* Uniform card heights fallback */
+.chart-card { min-height: 18rem; }
+html.dense-mode .chart-card { min-height: 14rem; }
+
+/* KPI dense tweak */
+html.dense-mode .kpi-grid > div { min-height:120px; padding:0.75rem; }
+
+/* Responsive auto-fit grid for KPI cards: ensures wider cards so contenido no se corta */
+.kpi-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); }
+html.dense-mode .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); }
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #FAF8F4;
+  color: #303A35;
+}
+
+::selection {
+  background: #E7A35A;
+  color: #303A35;
+}
+
+/* Evitar clipping lateral de gráficos (por defecto Recharts oculta overflow en el wrapper) */
+.chart-card .recharts-surface { overflow: visible; }
+
+/* Shared visual tokens for existing neutral utility classes. */
+.bg-neutral-50 { background-color: #FAF8F4 !important; }
+.bg-neutral-100 { background-color: #F3F1EB !important; }
+.bg-neutral-200 { background-color: #E6E5DF !important; }
+.border-neutral-200,
+.border-neutral-300 { border-color: #E6E5DF !important; }
+.text-neutral-900,
+.text-neutral-800 { color: #303A35 !important; }
+.text-neutral-700 { color: #3E4A43 !important; }
+.text-neutral-600 { color: #58645D !important; }
+.text-neutral-500,
+.text-neutral-400 { color: #788179 !important; }
+.text-red-600,
+.text-red-700 { color: #C83F45 !important; }
+.bg-red-500,
+.bg-red-600 { background-color: #C83F45 !important; }
+.text-emerald-700 { color: #23865A !important; }
